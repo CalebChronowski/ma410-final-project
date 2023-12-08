@@ -14,7 +14,7 @@ def f(x):
     return np.e**(3*x1) + np.e**(4*x2)
 
 
-def grad_fn(x):
+def grad_f(x):
     x1, x2 = x[0], x[1]
     output = np.array([
         [3*np.e**(3*x1)],
@@ -23,13 +23,15 @@ def grad_fn(x):
     return output
 
 
-def grad2_fn(x):
+def grad2_f(x):
     x1, x2 = x[0], x[1]
     output = np.array([
         [9*np.e**(3*x1), 0],
         [0, 16*np.e**(-4*x2)]
         ])
     return output
+
+
 
 
 # g(x) = x1^2 + x2^2 -1
@@ -53,11 +55,23 @@ def grad2_g(x):
         ])
 
 
-def A_ρ(f, x, λ, ρ):
-    '''
-    the augmented lagrange function
-    '''
 
+# Lagrange
+def L(x, λ):
+    return f(x) - λ*g(x)
+
+
+def grad_L(x, λ):
+    return grad_f(x) - λ*grad_g(x)
+
+
+
+# Augmented lagrange
+def A(f, x, λ, ρ):
+    '''
+    returns the augmented lagrange function
+    '''
+    return f(x) + λ*g(x) + 0.5*ρ*g(x)**2
 
 
 def subproblem(f, x, λ, ρ):
