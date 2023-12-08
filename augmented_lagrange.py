@@ -28,12 +28,10 @@ def grad2_f(x):
     return output
 
 
-
-
 # g(x) = x1^2 + x2^2 -1
 def g(x):
     x1, x2 = x[0][0], x[1][0]
-    return x1 + x2 - 1
+    return x1**2 + x2**2 - 1
 
 
 def grad_g(x):
@@ -72,8 +70,6 @@ def grad_A(f, x, λ, ρ):
     x1, x2 = x[0][0], x[1][0]
     pd_wrt_x1 = 20*x1*(x1**2 + x2**2 -1) - 2*λ*x1 + 3*np.e**(3*x1)
     pd_wrt_x2 = 20*x2*(x1**2 + x2**2 - 1) - 2*λ*x2 - 4*np.log(3)*(1/81)**(x2) ## this is off by a hundredth
-    print(f"pd wrt x1: {pd_wrt_x1}")
-    print(f"pd wrt x2: {pd_wrt_x2}")
         
     output = np.array([
         [pd_wrt_x1],
@@ -115,7 +111,24 @@ def subproblem(f, x, λ, ρ):
     '''
     ### x_k+1 = x_k + (-1 * inv(grad2_L(x)) * grad_L(x) ) ?
     ### thought this was a newton's method problem?
-    
+    x_k = x
+    error = 1
+    i = 0
+    while error > sp_tol:
+        print(f"iteration {i}\nsp_x{i} = {x_k}")
+        gradA = grad_A(f, x_k, λ, ρ)
+        grad2A = grad2_A(f, x_k, λ, ρ)
+        x_kp1 = x_k - np.matmul(np.linalg.inv(grad2A), gradA)
+        error = np.linalg.norm(grad_A(f, x_k, λ, ρ))
+
+        # update
+        x_k = x_kp1
+        i+=1
+        error = np.linalg.norm(gradA)
+        if i >= 1000000:
+            break
+    print("*************"*4)
+    return x_k
 
 
 def augmented_lagrange(fn, x0, λ0, ρ0, tol=1e-2, sp_tol=1e-2):
@@ -123,7 +136,7 @@ def augmented_lagrange(fn, x0, λ0, ρ0, tol=1e-2, sp_tol=1e-2):
     performs an augmented lagrange method to solve a nonlinear optimization problem
     
     inputs:
-        fn: a function of interes
+        fn: a function of interest
         x0: an initial guess for x 
         λ0: an initial guess for λ 
         ρ0: an initial guess for ρ
@@ -132,22 +145,57 @@ def augmented_lagrange(fn, x0, λ0, ρ0, tol=1e-2, sp_tol=1e-2):
     outputs:
         <UPDATE ME> I haven't decided shape
     '''
+
+
+    # data.update({"initial values" : {
+    #     "x_0" : x0,
+    #     "lambda_0" : λ0,
+    #     "rho_0" : ρ0,
+    #     "error_tol" : tol,
+    #     "sub_error_tol" : sp_tol
+    # }})
+
+
+    # data.update({"msg" : "trying something"})
+
     x, λ, ρ = x0, λ0, ρ0
+    error = 1
+    i = 0
 
-    data.update({{"initial values"} : {
-        "x_0" : x0,
-        "lambda_0" : λ0,
-        "rho_0" : ρ0,
-        "error_tol" : tol,
-        "sub_error_tol" : sp_tol
-    }})
+    x_k = x
+    λ_k = λ
 
-    data.update({"msg" : "trying something"})
-    
-    error = 1e8 # set an initial error that's well above any sane tolerance
     while error > tol:
-        pass
-    data.save()  # overwrites the data.py
+        i+=1
+        x_kp1 = subproblem(f, x_k, λ_k, ρ)
+        λ_kp1 = λ_k - ρ*g(x_kp1) # lambda update
+        print(f"λ: {λ_kp1}")
+        
+        # update
+        x_k = x_kp1
+        λ_k = λ_kp1
+        error = np.linalg.norm(grad_A(f, x_k, λ_k, ρ))
+        if i > 10:
+            break
+        print(f"iteration {i}")
+        print(f"\tx_k = \n{x_k}")
+        print(f"\tλ_k = \n{λ_k}")
+        print(f"\terror {error}")
+
+
+    # data.update({{"initial values"} : {
+    #     "x_0" : x0,
+    #     "lambda_0" : λ0,
+    #     "rho_0" : ρ0,
+    #     "error_tol" : tol,
+    #     "sub_error_tol" : sp_tol
+    # }})
+
+    # data.update({"msg" : "trying something"})
+
+    # data.save()  # overwrites the data.py
+
+    return x_k
 
 
 if __name__ == "__main__":
@@ -158,11 +206,13 @@ if __name__ == "__main__":
         ])
     λ0 = -1
     ρ0 = 10
-    tol = 1.e-2 # main error tolerance
-    sp_tol = 1.e-3 # subproblem error tolerance ###<Can this be dynamic?>###
+    tol = 1.e-9 # main error tolerance
+    sp_tol = 1.e-9 # subproblem error tolerance ###<Can this be dynamic?>###
 
     # data
     # this will be accessed to store data for the graphs and other metadata 
     data = Logger
+
+    print(f"full problem output {augmented_lagrange(f, x0, λ0, ρ0)}")
 
     pass
