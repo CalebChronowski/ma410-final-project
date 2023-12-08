@@ -1,16 +1,27 @@
+# Dependencies
 import numpy as np
+from logger import Logger
 
-x0 = np.array([1],[-1])
-λ0 = -1 # λ
-ρ0 = 10 # ρ
-tol = 1.e-2 # desired tolerance
-sp_tol = 1.e-3 # subproblem tolerance
 
+# initial values
+x0 = np.array([
+    [1],
+    [-1]
+    ])
+λ0 = -1
+ρ0 = 10
+tol = 1.e-2 # main error tolerance
+sp_tol = 1.e-3 # subproblem error tolerance ###<Can this be dynamic?>###
+
+
+# data
+# this will be accessed to store data for the graphs and other metadata 
+data = Logger
 
 
 # f(x) = e^{3*x1} + e^{-4*x2}
 def f(x):
-    x1, x2 = x[0], x[1]
+    x1, x2 = x[0], x[1] # rewriting the variables this way allows me to make the formula look as close to handwritten math as possible
     return np.e**(3*x1) + np.e**(4*x2)
 
 
@@ -66,7 +77,7 @@ def grad_L(x, λ):
 
 
 
-# Augmented lagrange
+# Augmented Lagrange
 def A(f, x, λ, ρ):
     '''
     returns the augmented lagrange function
@@ -74,6 +85,8 @@ def A(f, x, λ, ρ):
     return f(x) + λ*g(x) + 0.5*ρ*g(x)**2
 
 
+
+# The full Augmented Lagrange method
 def subproblem(f, x, λ, ρ):
     '''
     an unconstrained subproblem computes x_k+1 by minimizing an augmented lagrange formula
@@ -98,9 +111,21 @@ def augmented_lagrange(fn, x0, λ0, ρ0, tol=1e-2, sp_tol=1e-2):
         <UPDATE ME> I haven't decided shape
     '''
     x, λ, ρ = x0, λ0, ρ0
-    error = 1
+
+    data.update({{"initial values"} : {
+        "x_0" : x0,
+        "lambda_0" : λ0,
+        "rho_0" : ρ0,
+        "error_tol" : tol,
+        "sub_error_tol" : sp_tol
+    }})
+
+    data.update({"msg" : "trying something"})
+    
+    error = 1e8 # set an initial error that's well above any sane tolerance
     while error > tol:
         pass
+    data.save()  # overwrites the data.py
 
 
 if __name__ == "__main__":
