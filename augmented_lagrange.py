@@ -57,15 +57,15 @@ def L(x, λ): # this is probably useless garbage
     return f(x) - λ*g(x)
 
 
-# Augmented Lagrange
-def A(f, x, λ, ρ):
-    '''
-    returns the augmented lagrange function
-    '''
-    return f(x) + λ*g(x) + 0.5*ρ*g(x)**2
+# # Augmented Lagrange
+# def A(f, x, λ, ρ):
+#     '''
+#     returns the augmented lagrange function
+#     '''
+#     return f(x) + λ*g(x) + 0.5*ρ*g(x)**2
 
 
-def grad_A(f, x, λ, ρ):
+def grad_A(x, λ):
     # we're not updating rho apparently
     x1, x2 = x[0][0], x[1][0]
     pd_wrt_x1 = 20*x1*(x1**2 + x2**2 -1) - 2*λ*x1 + 3*np.e**(3*x1)
@@ -78,7 +78,7 @@ def grad_A(f, x, λ, ρ):
     return output
 
 
-def grad2_A(f, x, λ, ρ):
+def grad2_A(x, λ):
     x1, x2 = x[0][0], x[1][0]
     pd_wrt_x1x1 = 20*(3*x1**2 + x2**2 - 1)- 2*λ + 9*np.e**(3*x1) # top left
     pd_wrt_x2x2 = 20*(3*x2**2 + x1**2 - 1) - 2*λ + 16*(np.log(3)**2)*(1/81)**(x2) # bottom right
@@ -91,19 +91,9 @@ def grad2_A(f, x, λ, ρ):
     ])
     return output
 
-###############################################################
-# vetigial?
-def grad_L(x, λ, ρ):
-    return grad_f(x) - λ*grad_g(x)
-
-def grad2_L(x, λ, ρ):
-    return grad2_f(x) + λ * grad2_g(x) # verify this
-################################################################
-
-
 
 # The full Augmented Lagrange method
-def subproblem(f, x, λ, ρ):
+def subproblem(x, λ, sp_tol=1e-9):
     '''
     an unconstrained subproblem computes x_k+1 by minimizing an augmented lagrange formula
     
@@ -116,10 +106,10 @@ def subproblem(f, x, λ, ρ):
     i = 0
     while error > sp_tol:
         print(f"iteration {i}\nsp_x{i} = {x_k}")
-        gradA = grad_A(f, x_k, λ, ρ)
-        grad2A = grad2_A(f, x_k, λ, ρ)
+        gradA = grad_A(x_k, λ)
+        grad2A = grad2_A(x_k, λ)
         x_kp1 = x_k - np.matmul(np.linalg.inv(grad2A), gradA)
-        error = np.linalg.norm(grad_A(f, x_k, λ, ρ))
+        error = np.linalg.norm(grad_A(x_k, λ))
 
         # update
         x_k = x_kp1
@@ -131,7 +121,7 @@ def subproblem(f, x, λ, ρ):
     return x_k
 
 
-def augmented_lagrange(fn, x0, λ0, ρ0, tol=1e-2, sp_tol=1e-2):
+def augmented_lagrange(x0, λ0, ρ0, tol=1e-3, sp_tol=1e-3):
     '''
     performs an augmented lagrange method to solve a nonlinear optimization problem
     
@@ -159,7 +149,7 @@ def augmented_lagrange(fn, x0, λ0, ρ0, tol=1e-2, sp_tol=1e-2):
     # data.update({"msg" : "trying something"})
 
     x, λ, ρ = x0, λ0, ρ0
-    error = 1
+    error = 1e7
     i = 0
 
     x_k = x
@@ -167,14 +157,14 @@ def augmented_lagrange(fn, x0, λ0, ρ0, tol=1e-2, sp_tol=1e-2):
 
     while error > tol:
         i+=1
-        x_kp1 = subproblem(f, x_k, λ_k, ρ)
+        x_kp1 = subproblem(x_k, λ_k, sp_tol=sp_tol)
         λ_kp1 = λ_k - ρ*g(x_kp1) # lambda update
         print(f"λ: {λ_kp1}")
         
         # update
         x_k = x_kp1
         λ_k = λ_kp1
-        error = np.linalg.norm(grad_A(f, x_k, λ_k, ρ))
+        error = np.linalg.norm(grad_A(x_k, λ_k))
         if i > 10:
             break
         print(f"iteration {i}")
@@ -213,6 +203,6 @@ if __name__ == "__main__":
     # this will be accessed to store data for the graphs and other metadata 
     data = Logger
 
-    print(f"full problem output {augmented_lagrange(f, x0, λ0, ρ0)}")
+    print(f"full problem output {augmented_lagrange(x0, λ0, ρ0)}")
 
     pass
