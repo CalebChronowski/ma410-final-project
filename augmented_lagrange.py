@@ -1,7 +1,7 @@
 # Dependencies
 import numpy as np
 
-
+### Functions and gradients ###
 # g(x) = x1^2 + x2^2 -1
 def g(x):
     x1, x2 = x[0][0], x[1][0]
@@ -12,7 +12,7 @@ def g(x):
 def grad_A(x, λ):
     x1, x2 = x[0][0], x[1][0]
     pd_wrt_x1 = 20*x1*(x1**2 + x2**2 -1) - 2*λ*x1 + 3*np.e**(3*x1)
-    pd_wrt_x2 = 20*x2*(x1**2 + x2**2 - 1) - 2*λ*x2 - 4*np.log(3)*(1/81)**(x2) ## this is off by a hundredth
+    pd_wrt_x2 = 20*x2*(x1**2 + x2**2 - 1) - 2*λ*x2 - 4*np.log(3)*(1/81)**(x2)
         
     output = np.array([
         [pd_wrt_x1],
@@ -35,7 +35,7 @@ def grad2_A(x, λ):
     return output
 
 
-# The full Augmented Lagrange method
+### The unconstrained subproblem ###
 def subproblem(x, λ, sp_tol=1e-9):
     '''
     an unconstrained subproblem computes x_k+1 by minimizing an augmented lagrange formula
@@ -45,9 +45,7 @@ def subproblem(x, λ, sp_tol=1e-9):
     x_k = x
     error = 1
     i = 0
-    print("*************"*4)
     while error > sp_tol:
-        print(f"sub problem iteration {i}\nsp_x{i} = {x_k}")
         gradA = grad_A(x_k, λ)
         grad2A = grad2_A(x_k, λ)
         x_kp1 = x_k - np.matmul(np.linalg.inv(grad2A), gradA)
@@ -56,13 +54,12 @@ def subproblem(x, λ, sp_tol=1e-9):
         x_k = x_kp1
         i+=1
         error = np.linalg.norm(gradA)
-        print(f"error: {error}")
         if i >= 1000000:
             break
-    print("*************"*4)
     return x_k
 
 
+### The full augmented lagrange method ###
 def augmented_lagrange(x0, λ0, ρ0, tol=1e-9, sp_tol=1e-9):
     '''
     performs an augmented lagrange method to solve a nonlinear optimization problem
@@ -73,8 +70,6 @@ def augmented_lagrange(x0, λ0, ρ0, tol=1e-9, sp_tol=1e-9):
 
     x_k = x
     λ_k = λ
-    print("================"*4)
-    print("================"*4)
 
 
     while error > tol:
@@ -86,14 +81,7 @@ def augmented_lagrange(x0, λ0, ρ0, tol=1e-9, sp_tol=1e-9):
         x_k = x_kp1
         λ_k = λ_kp1
         error = np.linalg.norm(grad_A(x_k, λ_k))
-
-        print(f"main problem iteration {i}")
-        print(f"\tx_{i} = \n{x_k}")
-        print(f"\tλ_{i} = \n{λ_k}")
-        print(f"\terror {error}")
-        print("=============="*4)
-        print("=============="*4)
-
+        print(f"{x_k[0][0]}, {x_k[1][0]}, {λ_k}, {error}")
     return x_k
 
 
@@ -108,3 +96,6 @@ if __name__ == "__main__":
 
     x = augmented_lagrange(x0, λ0, ρ0)
     print(f"final answer:\n{x}")
+
+    error = np.linalg.norm(grad_A(x0, λ0))
+    print(error)

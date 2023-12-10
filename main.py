@@ -9,5 +9,6 @@ if __name__ == "__main__":
         ])
     λ0 = -1
     ρ0 = 10
+    x = augmented_lagrange(x0, λ0, ρ0)
 
-    print(augmented_lagrange(x0, λ0, ρ0))
+    print(f"x = {x}")
